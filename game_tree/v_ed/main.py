@@ -101,19 +101,29 @@ def minimax(state: State, alpha: float, beta: float):
 
         return best_val, best_move
 
-def apply_move(state: State, divisor: int):
+def apply_move(state: State, divisor: int) -> State:
     new_number = state.number // divisor
 
+    even = (new_number % 2 == 0)
+
+    human_points = state.human_points
+    computer_points = state.computer_points
+
     if state.turn == "human":
-        if (new_number % 2 == 0):
-            return State(new_number, state.human_points, state.computer_points - 1, "computer")
+        if even:
+            computer_points -= 1
         else:
-            return State(new_number, state.human_points + 1, state.computer_points, "computer")
+            human_points += 1
+        next_turn = "computer"
+
     else:
-        if (new_number % 2 == 0):
-            return State(new_number, state.human_points - 1, state.computer_points, "computer")
+        if even:
+            human_points -= 1
         else:
-            return State(new_number, state.human_points, state.computer_points + 1, "computer")
+            computer_points += 1
+        next_turn = "human"
+
+    return State(new_number, human_points, computer_points, next_turn)
 
 def main():
     numbers = start_number_generator()
@@ -136,7 +146,7 @@ def main():
 
     while not is_terminal(state):
         print(f"Current number: {state.number}")
-        print(f"SCORE: H {state.human_points}, C {state.computer_points}")
+        print(f"SCORE: H {state.human_points}, C {state.computer_points}\n")
 
         if state.turn == "human":
             while True:
@@ -154,7 +164,7 @@ def main():
                     continue
                 break
 
-            state = apply_move(state, divisor)    
+            state = apply_move(state, divisor)
 
         else:
             best_val, best_move = minimax(state, -float("inf"), float("inf"))
@@ -165,7 +175,7 @@ def main():
 
             print(f"Current number: {state.number}")
             print(f"SCORE: H {state.human_points}, C {state.computer_points}")
-            print(f"Computer divided by {best_move}.\n")
+            print(f"Divide by: {best_move}\n")
 
             print("\033[0m", end="")  # reset color
 
