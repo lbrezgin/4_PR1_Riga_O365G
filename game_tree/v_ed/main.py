@@ -22,7 +22,7 @@ class State:
     computer_points: int
     turn: str
 
-# function that generates children of each state (node)
+# function that generates children of each state
 def generate_children(state: State):
     children: List[Tuple[State, int]] = []
 
@@ -46,12 +46,17 @@ def generate_children(state: State):
             
     return children
 
-def is_terminal(state: State):
-    return (
-        state.number % 2 != 0 and
-        state.number % 3 != 0 and
-        state.number % 4 != 0
-    )
+def is_terminal(state: State) -> bool:
+    if state.number <= 10:
+        return True
+    
+    for d in (2, 3, 4):
+        if state.number % d == 0:
+            return False
+        
+    return True
+
+
 
 def evaluate(state: State):
     return state.computer_points - state.human_points
@@ -61,14 +66,15 @@ def minimax(state: State, alpha: float, beta: float):
         return evaluate(state), None
     
     if state.turn == "computer": # computer is chosen as the maximizing player
+        best_move = None
         best_val = -float("inf")
         
         for child, divisor in generate_children(state):
            val, _ = minimax(child, alpha, beta) # evaluates the move in the long run
 
            if val > best_val:
-            best_val = val
-            best_move = divisor
+              best_val = val
+              best_move = divisor
 
            alpha = max(alpha, best_val)
 
@@ -78,10 +84,11 @@ def minimax(state: State, alpha: float, beta: float):
         return best_val, best_move
 
     else: # turn of the human (min player)
+        best_move = None
         best_val = float("inf")
 
         for child, divisor in generate_children(state):
-           val, divisor = minimax(child, alpha, beta) # evaluates the move in the long run 
+           val, _ = minimax(child, alpha, beta) # evaluates the move in the long run 
 
            if val < best_val:
                 best_val = val
@@ -93,15 +100,20 @@ def minimax(state: State, alpha: float, beta: float):
                break
 
         return best_val, best_move
-    
+
 def apply_move(state: State, divisor: int):
     new_number = state.number // divisor
 
     if state.turn == "human":
-        return State(new_number, state.human_points + 1, state.computer_points, "computer")
+        if (new_number % 2 == 0):
+            return State(new_number, state.human_points, state.computer_points - 1, "computer")
+        else:
+            return State(new_number, state.human_points + 1, state.computer_points, "computer")
     else:
-        return State(new_number, state.human_points, state.computer_points + 1, "human")
-
+        if (new_number % 2 == 0):
+            return State(new_number, state.human_points - 1, state.computer_points, "computer")
+        else:
+            return State(new_number, state.human_points, state.computer_points + 1, "computer")
 
 def main():
     numbers = start_number_generator()
@@ -123,8 +135,8 @@ def main():
     state = State(chosen_number, 0, 0, "human")
 
     while not is_terminal(state):
-        print(f"Current number: {state.number}\n")
-        print(f"Score: H-{state.human_points}, C-{state.computer_points}\n")
+        print(f"Current number: {state.number}")
+        print(f"SCORE: H {state.human_points}, C {state.computer_points}")
 
         if state.turn == "human":
             while True:
@@ -142,16 +154,23 @@ def main():
                     continue
                 break
 
-            state = apply_move(state, divisor)
+            state = apply_move(state, divisor)    
 
         else:
             best_val, best_move = minimax(state, -float("inf"), float("inf"))
 
             state = apply_move(state, best_move)
+
+            print("\033[92m", end="")  # start green
+
+            print(f"Current number: {state.number}")
+            print(f"SCORE: H {state.human_points}, C {state.computer_points}")
             print(f"Computer divided by {best_move}.\n")
 
+            print("\033[0m", end="")  # reset color
+
     print("---GAME OVER---")
-    print(f"Final Score: H-{state.human_points}, C-{state.computer_points}")
+    print(f"Final Score: H {state.human_points}, C {state.computer_points}")
 
     if state.human_points > state.computer_points:
         print("Winner: Human")
